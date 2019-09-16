@@ -4,42 +4,6 @@
 #include <string.h>
 #include <unistd.h>
 
-void dump_options(SANE_Handle scanner_handle)
-{
-  const SANE_Option_Descriptor * odesc;
-  SANE_Int options_index;
-  SANE_Int optval;
-  SANE_Bool is_true = 1;
-  SANE_Status status;
-
-  options_index = 0;
-  while(odesc = sane_get_option_descriptor(scanner_handle, options_index)) {
-    printf("%d: %s\t%s\t%d\t=> ",
-  	   options_index,
-  	   odesc->name, odesc->title, odesc->type);
-    switch(odesc->type) {
-    case SANE_TYPE_BOOL:
-      status = sane_control_option(scanner_handle, options_index,
-  			  SANE_ACTION_GET_VALUE,
-  			  (void *) &is_true,
-  			  NULL);
-      printf("%d %s (%s)\n", is_true, is_true ? "true" : "false",
-  	     sane_strstatus(status));
-      break;
-    case SANE_TYPE_INT:
-      sane_control_option(scanner_handle, options_index,
-  			  SANE_ACTION_GET_VALUE,
-  			  (void *) &optval,
-  			  NULL);
-      printf("%d\n", optval);
-      break;
-    default:
-      printf("?\n");
-    }
-    options_index++;
-  }
-}
-
 int find_option_index(SANE_Handle scanner_handle, char *name)
 {
   const SANE_Option_Descriptor * odesc;
@@ -112,16 +76,16 @@ int main(int argc, char *argv[]) {
 			  SANE_ACTION_GET_VALUE,
 			  (void *) &is_set,
 			  NULL);
-      /* printf("%d %s %s\n", */
-      /* 	     buttons[i].index, */
-      /* 	     buttons[i].name, */
-      /* 	     is_set ? "true" : "false"); */
       if(is_set) {
-	finished=1;
+	finished = 1;
 	printf("%s ", buttons[i].name);
       }
     }
     if(iterations < 2)
+      /* there is (as far as i can tell) a bug in the sane fujitsu
+	 backend such that it will always report 0/false the first
+	 time you call sane_control_option for any given option.  So,
+	 workaround is to run it twice at minimum */
       iterations++;
     if(wait_until_pressed) {
       usleep(1000 * 50);
